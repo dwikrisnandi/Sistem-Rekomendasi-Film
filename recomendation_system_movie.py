@@ -107,9 +107,24 @@ print('Jumlah data tags : ', len(df_tags.movieId.unique()))
 4. `tags` adalah daftar kata kunci dari film yang ada
 """
 
+df_links.info()
+
+"""DataFrame link berisi 9742 baris dan 3 kolom, yaitu movieId, imdbId, dan tmdbId. Kolom movieId dan imdbId lengkap (tidak ada data yang hilang), sedangkan kolom tmdbId memiliki 8 nilai yang hilang. Tipe data untuk movieId dan imdbId adalah integer, sementara tmdbId adalah float (bilangan desimal). Total memori yang digunakan adalah sekitar 228.5 KB."""
+
+df_movies.info()
+
+"""DataFrame movies berisi 9742 baris dan 3 kolom, yaitu movieId, title, dan genres. Semua kolom memiliki data yang lengkap (tidak ada nilai yang hilang). Tipe data untuk movieId adalah integer, sedangkan title dan genres disimpan dalam format string (object). Total memori yang digunakan oleh DataFrame ini adalah lebih dari 228.5 KB."""
+
 df_rating.info()
 
-"""kode ini bertujuan untuk melihat variabel dalam data rating"""
+"""DataFrame rating berisi 100836 baris dan 4 kolom, yaitu userId, movieId, rating, dan timestamp. Semua kolom memiliki data yang lengkap (tidak ada nilai yang hilang). Tipe data untuk userId, movieId, dan timestamp adalah integer, sementara rating adalah float (bilangan desimal). Total memori yang digunakan oleh DataFrame ini adalah sekitar 3.1 MB"""
+
+df_tags.info()
+
+"""DataFrame ini berisi 3683 baris dan 4 kolom, yaitu userId, movieId, tag, dan timestamp. Semua kolom memiliki data yang lengkap (tidak ada nilai yang hilang). Tipe data untuk userId, movieId, dan timestamp adalah integer, sementara tag disimpan dalam format string (object). Total memori yang digunakan oleh DataFrame ini adalah lebih dari 115.2 KB.
+
+kode ini bertujuan untuk melihat variabel dalam data rating
+"""
 
 # Visualisasi distribusi rating
 plt.figure(figsize=(10, 6))
@@ -242,11 +257,13 @@ movie_new = pd.DataFrame({
 })
 movie_new
 
-"""## Modeling and Result
+"""Kode diatasb merukan pembuatan Data Frame baru
 
-Proses modeling yang lakukan pada data ini adalah dengan membuat algoritma machine learning, yaitu `content based filtering` dan `collabrative filtering`. untuk algoritma `content based filtering` DIbuat dengan apa yang disukai pengguna, sedangkan untuk `content based filtering` DIbuat dengan memanfaatkan tingkat rating dari film tersebut.
+Pemilihan kolom `movieId`, `title`, dan `genres` sangat strategis karena:
 
-### Model Development dengan Content Based Filtering
+* Mereka menyediakan identifikasi yang diperlukan untuk setiap film.
+* Menyediakan informasi yang dibutuhkan untuk analisis dan rekomendasi.
+* Memastikan bahwa sistem rekomendasi dapat berfungsi secara efektif, dengan memberikan hasil yang relevan dan informatif kepada pengguna.
 
 #### Menggunakan TFIDF
 """
@@ -260,7 +277,7 @@ tf.fit(movie_new['genre'])
 # Mapping array dari fitur index integer ke fitur nama
 tf.get_feature_names_out()
 
-"""pada kode diatas bertujuan untuk menginisialisasi `TfidfVectorizer` selanjutnya melakukan perhitungan dan terakhir menampilkan fenre kedalam array"""
+"""pada kode diatas bertujuan untuk menginisialisasi `TfidfVectorizer` selanjutnya melakukan perhitungan dan terakhir menampilkan genre kedalam array"""
 
 tfidf_matrix = tf.fit_transform(movie_new['genre'])
 tfidf_matrix.shape
@@ -277,7 +294,14 @@ pd.DataFrame(
     index=movie_new.movie_name
 ).sample(22, axis=1).sample(10, axis=0)
 
-"""Kode diatas membuat DataFrame dari matriks TF-IDF dengan kolom berupa fitur (kata-kata) dan indeks berupa nama film, kemudian secara acak mengambil 22 kolom dan 10 baris dari DataFrame tersebut."""
+"""Kode diatas membuat DataFrame dari matriks TF-IDF dengan kolom berupa fitur (kata-kata) dan indeks berupa nama film, kemudian secara acak mengambil 22 kolom dan 10 baris dari DataFrame tersebut.
+
+## Modeling and Result
+
+Proses modeling yang lakukan pada data ini adalah dengan membuat algoritma machine learning, yaitu `content based filtering` dan `collabrative filtering`. untuk algoritma `content based filtering` DIbuat dengan apa yang disukai pengguna, sedangkan untuk `content based filtering` DIbuat dengan memanfaatkan tingkat rating dari film tersebut.
+
+### Model Development dengan Content Based Filtering
+"""
 
 cosine_sim = cosine_similarity(tfidf_matrix)
 cosine_sim
@@ -289,7 +313,7 @@ print('Shape:', cosine_sim_df.shape)
 
 cosine_sim_df.sample(5, axis=1).sample(10, axis=0)
 
-"""Kode tersebut membuat DataFrame dari matriks kesamaan kosinus dengan indeks dan kolom berupa nama film, mencetak bentuk (dimensi) dari DataFrame, lalu menampilkan 5 kolom dan 10 baris secara acak dari DataFrame tersebut.
+"""Kode ini bertujuan untuk membangun dan menampilkan matriks `cosine similarity` antar film berdasarkan representasi `TF-IDF` mereka. Dengan menggunakan DataFrame, informasi kesamaan antara film dapat diorganisir dengan cara yang mudah dipahami dan digunakan dalam sistem rekomendasi. Dengan mencetak bentuk DataFrame dan menampilkan sampel acak, Anda dapat dengan cepat memeriksa struktur data dan memvalidasi hasil yang diperoleh dari perhitungan `cosine similarity`.
 
 #### Membuat Rekomendasi
 
@@ -318,8 +342,10 @@ def movie_recommendations(nama_movie, similarity_data=cosine_sim_df, items=movie
 
     return pd.DataFrame(closest).merge(items).head(k)
 
-film = 'Deadpool 2 (2018)'
+"""Fungsi `movie_recommendations` dirancang untuk memberikan rekomendasi film berdasarkan nama film yang dimasukkan oleh pengguna, menggunakan matriks cosine similarity yang sudah dihitung sebelumnya. Fungsi ini mengambil nama film yang dicari dan menemukan indeks film lain yang memiliki kesamaan tertinggi dengan film tersebut menggunakan metode `argpartition`, yang memungkinkan pengambilan elemen teratas tanpa perlu mengurutkan seluruh data. Setelah itu, film yang dicari dihapus dari daftar rekomendasi untuk menghindari duplikasi, dan hasilnya digabungkan dengan DataFrame yang berisi informasi film seperti nama dan genre. Akhirnya, fungsi ini mengembalikan sejumlah `k` rekomendasi teratas dalam bentuk DataFrame, memberikan pengguna alternatif yang relevan berdasarkan preferensi mereka."""
 
+# Mengambil 1 judul film secara acak dari DataFrame movie_new
+film = 'Deadpool 2 (2018)'
 movie_new[movie_new.movie_name.eq(film)]
 
 """terapkan kode di atas untuk menemukan rekomendasi movie yang mirip dengan Deadpool 2 (2018) dengan genre yang ada pada tabel yaitu `Action|Comedy|Sci-Fi`."""
@@ -391,7 +417,7 @@ print('Number of User: {}, Number of movie: {}, Min Rating: {}, Max Rating: {}'.
 df = df_rating.sample(frac=1, random_state=42)
 df
 
-"""Kode tersebut mengacak seluruh dataset `df_rating` secara acak menggunakan parameter `frac=1` untuk menjaga ukuran dataset tetap sama dan `random_state=42` agar hasil acakan konsisten setiap kali dijalankan."""
+"""Kode diatas tersebut mengacak seluruh dataset `df_rating` secara acak menggunakan parameter `frac=1` untuk menjaga ukuran dataset tetap sama dan `random_state=42` agar hasil acakan konsisten setiap kali dijalankan."""
 
 # Membuat variabel x untuk mencocokkan data genres  dan movies menjadi satu value
 x = df[['genres', 'movies']].values
@@ -410,7 +436,7 @@ x_train, x_val, y_train, y_val = (
 
 print(x, y)
 
-"""Membagi data dengan 80% data training dan 20% data validasi"""
+"""dengan kode diatas membagi data dengan 80% data training dan 20% data validasi"""
 
 import tensorflow as tf
 from tensorflow import keras
@@ -455,6 +481,78 @@ class RecommenderNet(tf.keras.Model):
 
 """Kelas RecommenderNet adalah model rekomendasi berbasis TensorFlow yang menggunakan embedding untuk merepresentasikan pengguna dan film. Model ini menghitung skor kesukaan dengan melakukan operasi dot product antara vektor embedding pengguna dan film, kemudian menambahkan bias dari pengguna dan film, lalu mengaplikasikan fungsi aktivasi sigmoid untuk menghasilkan prediksi.
 
+Kode kelas `RecommenderNet`, yang merupakan model neural network yang dibangun menggunakan TensorFlow dan Keras untuk sistem rekomendasi:
+
+1. Definisi Kelas
+```
+class RecommenderNet(tf.keras.Model):
+```
+Kelas ini diturunkan dari tf.keras.Model, yang memungkinkan Anda untuk membangun model neural network kustom menggunakan TensorFlow. Ini memberikan struktur dan fungsi yang diperlukan untuk membuat dan melatih model.
+2. Inisialisasi Fungsi
+```
+def __init__(self, num_users, num_movie, embedding_size, **kwargs):
+```
+* __init__: Merupakan konstruktor yang diubah untuk menginisialisasi objek RecommenderNet.
+* Parameter:
+  * num_users: Jumlah pengguna dalam dataset.
+  * num_movie: Jumlah film dalam dataset.
+  * embedding_size: Ukuran vektor embedding yang akan digunakan untuk pengguna dan film.
+  * **kwargs: Parameter tambahan yang dapat diteruskan ke superclass.
+3. Super Constructor
+```
+super(RecommenderNet, self).__init__(**kwargs)
+```
+Memanggil konstruktor superclass untuk memastikan bahwa semua pengaturan dari kelas dasar (tf.keras.Model) juga diterapkan.
+4. Layer Embedding
+```
+self.user_embedding = layers.Embedding(num_users, embedding_size, embeddings_initializer='he_normal', embeddings_regularizer=keras.regularizers.l2(1e-6))
+self.user_bias = layers.Embedding(num_users, 1)
+self.movie_embedding = layers.Embedding(num_movie, embedding_size, embeddings_initializer='he_normal', embeddings_regularizer=keras.regularizers.l2(1e-6))
+self.movie_bias = layers.Embedding(num_movie, 1)
+```
+* Layer Embedding:
+  * user_embedding: Membuat layer embedding untuk pengguna, yang mengonversi ID pengguna menjadi vektor berdimensi embedding_size. Menggunakan he_normal sebagai initializer untuk distribusi normal, serta menambahkan regularisasi L2 untuk mencegah overfitting.
+
+  * user_bias: Membuat layer embedding untuk bias pengguna, dengan ukuran output 1, yang menambahkan bias untuk setiap pengguna.
+
+  * movie_embedding: Mirip dengan user_embedding, tetapi untuk film, mengonversi ID film menjadi vektor berdimensi embedding_size.
+
+  * movie_bias: Membuat layer embedding untuk bias film, juga dengan ukuran output 1.
+
+5. Metode Call
+```
+def call(self, inputs):
+```
+Metode ini mendefinisikan bagaimana model akan menghitung output ketika diberikan input.
+
+6. Mengambil Vektor dan Bias
+```
+user_vector = self.user_embedding(inputs[:, 0])
+user_bias = self.user_bias(inputs[:, 0])
+movie_vector = self.movie_embedding(inputs[:, 1])
+movie_bias = self.movie_bias(inputs[:, 1])
+```
+* inputs: Diasumsikan sebagai tensor dengan dua kolom, di mana kolom pertama adalah ID pengguna dan kolom kedua adalah ID film.
+* Mengambil vektor embedding dan bias untuk pengguna dan film berdasarkan input yang diberikan.
+
+7. Menghitung Produk Dot
+```
+dot_user_movie = tf.tensordot(user_vector, movie_vector, 2)
+```
+tf.tensordot: Menghitung produk dot antara vektor pengguna dan film. Angka 2 menunjukkan bahwa kedua vektor memiliki dua dimensi, sehingga hasilnya adalah skalar.
+
+8. Menjumlahkan Vektor dan Bias
+```
+x = dot_user_movie + user_bias + movie_bias
+```
+Menambahkan hasil produk dot dengan bias pengguna dan bias film untuk mendapatkan nilai akhir.
+
+9. Fungsi Aktivasi
+```
+return tf.nn.sigmoid(x)
+```
+Menggunakan fungsi aktivasi sigmoid untuk mengubah nilai output menjadi rentang antara 0 dan 1. Ini berguna untuk memprediksi rating, di mana 0 berarti tidak suka dan 1 berarti suka.
+
 ## EVALUASI
 """
 
@@ -488,7 +586,7 @@ model_checkpoint = ModelCheckpoint(
 history = model.fit(
     x = x_train,
     y = y_train,
-    batch_size = 32,
+    batch_size = 64,
     epochs = 100,
     validation_data = (x_val, y_val),
     callbacks=[early_stopping, model_checkpoint]  # menambahkan callback
@@ -499,7 +597,7 @@ history = model.fit(
 * EarlyStopping: Menghentikan pelatihan lebih awal jika performa validasi tidak membaik selama 10 epoch.
 * ModelCheckpoint: Menyimpan model terbaik selama pelatihan ke file best_model.keras.
 
-Pelatihan dilakukan dengan 100 epoch, batch size 32, dan menggunakan data validasi (x_val, y_val).
+Pelatihan dilakukan dengan 100 epoch, batch size 64, dan menggunakan data validasi (x_val, y_val).
 """
 
 plt.plot(history.history['root_mean_squared_error'])

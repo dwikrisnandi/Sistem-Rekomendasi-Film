@@ -35,16 +35,16 @@ Dataset didownload dari Kaggle dengan sumber data [Movie Recommendation Data](ht
 
 Berisikan 5 file dengan jumlah data setiap file
 1. movies_metadata.csv = 45466
-2. links.csv = 9742
-3. movies.csv = 610
-4. ratings.csv = 9742
-5. tags.csv = 1572
+2. links.csv = 9742 baris dan semuanya unik tidak duplikat
+3. movies.csv = 9742 basris dan semanua unik tidak duplikat
+4. ratings.csv = 100836 baris dan data unik berdasarkan userId sebanyak 610 dan data unik berdasarkan movieId sebanyak 9742
+5. tags.csv = 3683 baris dan memiliki data unik sebanyak 1572
 
 Dimana infromasi dari file tersebut adalah
-1. links yaitu daftar link pada setiap film
-2. movies merupakan daftar film yang tersedia untuk sistem ini
-3. ratings yaitu daftar penilaian dari film yang derikan pengguna
-5. tags adalah daftar kata kunci dari film yang ada
+1. links yaitu daftar link pada setiap film terdapat 3 kolom, yaitu movieId, imdbId, dan tmdbId. Kolom movieId dan imdbId lengkap (tidak ada data yang hilang), sedangkan kolom tmdbId memiliki 8 nilai yang hilang. Tipe data untuk movieId dan imdbId adalah integer, sementara tmdbId adalah float (bilangan desimal). Total memori yang digunakan adalah sekitar 228.5 KB
+2. movies merupakan daftar film yang tersedia untuk sistem ini memiliki 3 kolom, yaitu movieId, title, dan genres. Semua kolom memiliki data yang lengkap (tidak ada nilai yang hilang). Tipe data untuk movieId adalah integer, sedangkan title dan genres disimpan dalam format string (object). Total memori yang digunakan oleh DataFrame ini adalah lebih dari 228.5 KB.
+3. ratings yaitu daftar penilaian dari film yang derikan pengguna ada 4 kolom, yaitu userId, movieId, rating, dan timestamp. Semua kolom memiliki data yang lengkap (tidak ada nilai yang hilang). Tipe data untuk userId, movieId, dan timestamp adalah integer, sementara rating adalah float (bilangan desimal). Total memori yang digunakan oleh DataFrame ini adalah sekitar 3.1 MB
+4. tags adalah daftar kata kunci dari film yang ada 4 kolom, yaitu userId, movieId, tag, dan timestamp. Semua kolom memiliki data yang lengkap (tidak ada nilai yang hilang). Tipe data untuk userId, movieId, dan timestamp adalah integer, sementara tag disimpan dalam format string (object). Total memori yang digunakan oleh DataFrame ini adalah lebih dari 115.2 KB.
 
 ### Visualisasi Data
 Distribusi Rating
@@ -138,7 +138,7 @@ preparation = fix_movie.drop_duplicates('movieId')
 ```
 Langkah ini memastikan bahwa setiap movieId hanya muncul sekali di dataset.
 
-### Konversi ke List
+### Konversi ke List 
 Data hasil pembersihan kemudian dikonversi dari bentuk dataframe menjadi list untuk memudahkan manipulasi dalam bentuk lain:
 ```
 python
@@ -160,11 +160,12 @@ movie_new = pd.DataFrame({
 ```
 Ini menghasilkan dataframe yang bersih dan siap untuk proses selanjutnya, seperti pemodelan atau analisis lebih lanjut.
 
-## Modeling and Result
-Proses modeling yang lakukan pada data ini adalah dengan membuat algoritma machine learning, yaitu content based filtering dan collabrative filtering. untuk algoritma content based filtering DIbuat dengan apa yang disukai pengguna, sedangkan untuk content based filtering DIbuat dengan memanfaatkan tingkat rating dari film tersebut.
+Pemilihan kolom movieId, title, dan genres sangat strategis karena:
+* Kolom menyediakan identifikasi yang diperlukan untuk setiap film.
+* Menyediakan informasi yang dibutuhkan untuk analisis dan rekomendasi.
+* Memastikan bahwa sistem rekomendasi dapat berfungsi secara efektif, dengan memberikan hasil yang relevan dan informatif kepada pengguna.
 
-### Model Development dengan Content-Based Filtering
-#### Menggunakan TF-IDF (Term Frequency-Inverse Document Frequency)
+### Menggunakan TF-IDF (Term Frequency-Inverse Document Frequency)
 TF-IDF adalah teknik untuk mengubah data teks menjadi representasi numerik yang mencerminkan pentingnya kata dalam dokumen (dalam hal ini, genre film) dibandingkan dengan seluruh dokumen dalam dataset.
 ```
 python
@@ -178,36 +179,7 @@ tfidf_matrix = tf.fit_transform(movie_new['genre'])
 ```
 Transformasi genre menjadi matriks TF-IDF, di mana setiap elemen dalam matriks mewakili skor TF-IDF untuk genre tertentu pada film tertentu.
 
-#### Menghitung Kesamaan Kosinus (Cosine Similarity)
-Setelah mendapatkan representasi TF-IDF, langkah selanjutnya adalah menghitung cosine similarity antara film untuk melihat seberapa mirip mereka berdasarkan genre:
-```
-python
-cosine_sim = cosine_similarity(tfidf_matrix)
-```
-Matriks cosine similarity mengukur kesamaan antar film berdasarkan representasi TF-IDF dari genre mereka. Semakin tinggi nilai cosine similarity, semakin mirip dua film.
-
-#### Membuat Fungsi Rekomendasi
-Kode selanjutnya mendefinisikan fungsi movie_recommendations untuk memberikan rekomendasi film berdasarkan tingkat kesamaan (cosine similarity):
-```
-python
-def movie_recommendations(nama_movie, similarity_data=cosine_sim_df, items=movie_new[['movie_name', 'genre']], k=10)
-```
-Fungsi ini menerima judul film dan mencari film lain yang paling mirip dengan film tersebut. Langkah-langkahnya:
-* Mengambil film yang memiliki kesamaan tertinggi.
-* Menghindari merekomendasikan film yang sama.
-* Mengembalikan rekomendasi dalam bentuk DataFrame yang mencakup nama film dan genre.
-
-#### Contoh Penggunaan Rekomendasi untuk "Deadpool 2 (2018)"
-Dengan menjalankan kode:
-```
-python
-movie_recommendations('Deadpool 2 (2018)')
-```
-Sistem akan merekomendasikan film lain yang mirip dengan Deadpool 2 berdasarkan genre Action, Comedy, Sci-Fi. Kode ini menghasilkan rekomendasi yang sesuai dengan genre yang ada di film tersebut.
-
-
-### Model Development dengan Collaborative Filtering
-#### Data Preparation untuk Collaborative Filtering
+### Data Preparation untuk Collaborative Filtering
 Collaborative filtering menggunakan data interaksi pengguna (seperti rating film) untuk memberikan rekomendasi. Dalam kode ini, dilakukan persiapan data sebagai berikut:
 
 1.Encoding userId dan movieId
@@ -226,6 +198,54 @@ python
 train_indices = int(0.8 * df.shape[0])
 ```
 
+## Modeling and Result
+Proses modeling yang lakukan pada data ini adalah dengan membuat algoritma machine learning, yaitu content based filtering dan collabrative filtering. untuk algoritma content based filtering DIbuat dengan apa yang disukai pengguna, sedangkan untuk content based filtering DIbuat dengan memanfaatkan tingkat rating dari film tersebut.
+
+### Model Development dengan Content-Based Filtering
+#### Menghitung Kesamaan Kosinus (Cosine Similarity)
+Setelah mendapatkan representasi TF-IDF, langkah selanjutnya adalah menghitung cosine similarity antara film untuk melihat seberapa mirip mereka berdasarkan genre:
+```
+python
+cosine_sim = cosine_similarity(tfidf_matrix)
+```
+Matriks cosine similarity mengukur kesamaan antar film berdasarkan representasi TF-IDF dari genre mereka. Semakin tinggi nilai cosine similarity, semakin mirip dua film.
+Kode ini bertujuan untuk membangun dan menampilkan matriks cosine similarity antar film berdasarkan representasi TF-IDF mereka. Dengan menggunakan DataFrame, informasi kesamaan antara film dapat diorganisir dengan cara yang mudah dipahami dan digunakan dalam sistem rekomendasi. Dengan mencetak bentuk DataFrame dan menampilkan sampel acak, Anda dapat dengan cepat memeriksa struktur data dan memvalidasi hasil yang diperoleh dari perhitungan cosine similarity.
+
+#### Membuat Fungsi Rekomendasi
+Kode selanjutnya mendefinisikan fungsi movie_recommendations untuk memberikan rekomendasi film berdasarkan tingkat kesamaan (cosine similarity):
+```
+python
+def movie_recommendations(nama_movie, similarity_data=cosine_sim_df, items=movie_new[['movie_name', 'genre']], k=10)
+```
+Fungsi ini menerima judul film dan mencari film lain yang paling mirip dengan film tersebut. Langkah-langkahnya:
+* Mengambil film yang memiliki kesamaan tertinggi.
+* Menghindari merekomendasikan film yang sama.
+* Mengembalikan rekomendasi dalam bentuk DataFrame yang mencakup nama film dan genre.
+  
+Fungsi `movie_recommendations` dirancang untuk memberikan rekomendasi film berdasarkan nama film yang dimasukkan oleh pengguna, menggunakan matriks cosine similarity yang sudah dihitung sebelumnya. Fungsi ini mengambil nama film yang dicari dan menemukan indeks film lain yang memiliki kesamaan tertinggi dengan film tersebut menggunakan metode `argpartition`, yang memungkinkan pengambilan elemen teratas tanpa perlu mengurutkan seluruh data. Setelah itu, film yang dicari dihapus dari daftar rekomendasi untuk menghindari duplikasi, dan hasilnya digabungkan dengan DataFrame yang berisi informasi film seperti nama dan genre. Akhirnya, fungsi ini mengembalikan sejumlah `k` rekomendasi teratas dalam bentuk DataFrame, memberikan pengguna alternatif yang relevan berdasarkan preferensi mereka.
+
+#### Contoh Penggunaan Rekomendasi untuk "Deadpool 2 (2018)"
+Dengan menjalankan kode:
+```
+python
+movie_recommendations('Deadpool 2 (2018)')
+```
+Sistem akan merekomendasikan film lain yang mirip dengan Deadpool 2 berdasarkan genre Action, Comedy, Sci-Fi. Kode ini menghasilkan rekomendasi yang sesuai dengan genre yang ada di film tersebut.
+
+#### Top-N rekomendasi CBF dari judul Deadpool 2 (2018)
+| No | Movie Name                                             | Genre                   |
+|----|-------------------------------------------------------|-------------------------|
+| 0  | Men in Black (a.k.a. MIB) (1997)                      | Action|Comedy|Sci-Fi    |
+| 1  | Men in Black II (a.k.a. MIIB) (a.k.a. MIB 2) (2002) | Action|Comedy|Sci-Fi    |
+| 2  | Ghostbusters (a.k.a. Ghost Busters) (1984)           | Action|Comedy|Sci-Fi    |
+| 3  | Logan (2017)                                         | Action|Sci-Fi          |
+| 4  | Superman II (1980)                                   | Action|Sci-Fi          |
+| 5  | Terminator 2: Judgment Day (1991)                    | Action|Sci-Fi          |
+| 6  | Planet of the Apes (1968)                            | Action|Drama|Sci-Fi    |
+| 7  | Snowpiercer (2013)                                   | Action|Drama|Sci-Fi    |
+| 8  | War of the Worlds, The (1953)                        | Action|Drama|Sci-Fi    |
+| 9  | Mystery Science Theater 3000: The Movie (1996)       | Comedy|Sci-Fi          |
+
 
 ### Membangun Model Collaborative Filtering dengan TensorFlow
 Model Collaborative Filtering dibuat menggunakan Neural Network dengan embedding untuk representasi user dan movie
@@ -239,26 +259,126 @@ self.movie_embedding = layers.Embedding(num_movie, embedding_size)
 ```
 Operasi dot product antara embedding user dan movie digunakan untuk memprediksi tingkat rating yang mungkin diberikan user terhadap movie.
 
+Kode kelas `RecommenderNet`, yang merupakan model neural network yang dibangun menggunakan TensorFlow dan Keras untuk sistem rekomendasi:
+
+1. Definisi Kelas
+```
+class RecommenderNet(tf.keras.Model):
+```
+Kelas ini diturunkan dari tf.keras.Model, yang memungkinkan Anda untuk membangun model neural network kustom menggunakan TensorFlow. Ini memberikan struktur dan fungsi yang diperlukan untuk membuat dan melatih model.
+2. Inisialisasi Fungsi
+```
+def __init__(self, num_users, num_movie, embedding_size, **kwargs):
+```
+* __init__: Merupakan konstruktor yang diubah untuk menginisialisasi objek RecommenderNet.
+* Parameter:
+  * num_users: Jumlah pengguna dalam dataset.
+  * num_movie: Jumlah film dalam dataset.
+  * embedding_size: Ukuran vektor embedding yang akan digunakan untuk pengguna dan film.
+  * **kwargs: Parameter tambahan yang dapat diteruskan ke superclass.
+3. Super Constructor
+```
+super(RecommenderNet, self).__init__(**kwargs)
+```
+Memanggil konstruktor superclass untuk memastikan bahwa semua pengaturan dari kelas dasar (tf.keras.Model) juga diterapkan.
+4. Layer Embedding
+```
+self.user_embedding = layers.Embedding(num_users, embedding_size, embeddings_initializer='he_normal', embeddings_regularizer=keras.regularizers.l2(1e-6))
+self.user_bias = layers.Embedding(num_users, 1)
+self.movie_embedding = layers.Embedding(num_movie, embedding_size, embeddings_initializer='he_normal', embeddings_regularizer=keras.regularizers.l2(1e-6))
+self.movie_bias = layers.Embedding(num_movie, 1)
+```
+* Layer Embedding:
+  * user_embedding: Membuat layer embedding untuk pengguna, yang mengonversi ID pengguna menjadi vektor berdimensi embedding_size. Menggunakan he_normal sebagai initializer untuk distribusi normal, serta menambahkan regularisasi L2 untuk mencegah overfitting.
+
+  * user_bias: Membuat layer embedding untuk bias pengguna, dengan ukuran output 1, yang menambahkan bias untuk setiap pengguna.
+
+  * movie_embedding: Mirip dengan user_embedding, tetapi untuk film, mengonversi ID film menjadi vektor berdimensi embedding_size.
+
+  * movie_bias: Membuat layer embedding untuk bias film, juga dengan ukuran output 1.
+
+5. Metode Call
+```
+def call(self, inputs):
+```
+Metode ini mendefinisikan bagaimana model akan menghitung output ketika diberikan input.
+
+6. Mengambil Vektor dan Bias
+```
+user_vector = self.user_embedding(inputs[:, 0]) 
+user_bias = self.user_bias(inputs[:, 0]) 
+movie_vector = self.movie_embedding(inputs[:, 1]) 
+movie_bias = self.movie_bias(inputs[:, 1]) 
+```
+* inputs: Diasumsikan sebagai tensor dengan dua kolom, di mana kolom pertama adalah ID pengguna dan kolom kedua adalah ID film.
+* Mengambil vektor embedding dan bias untuk pengguna dan film berdasarkan input yang diberikan.
+
+7. Menghitung Produk Dot
+```
+dot_user_movie = tf.tensordot(user_vector, movie_vector, 2)
+```
+tf.tensordot: Menghitung produk dot antara vektor pengguna dan film. Angka 2 menunjukkan bahwa kedua vektor memiliki dua dimensi, sehingga hasilnya adalah skalar.
+
+8. Menjumlahkan Vektor dan Bias
+```
+x = dot_user_movie + user_bias + movie_bias
+```
+Menambahkan hasil produk dot dengan bias pengguna dan bias film untuk mendapatkan nilai akhir.
+
+9. Fungsi Aktivasi
+```
+return tf.nn.sigmoid(x)
+```
+Menggunakan fungsi aktivasi sigmoid untuk mengubah nilai output menjadi rentang antara 0 dan 1. Ini berguna untuk memprediksi rating, di mana 0 berarti tidak suka dan 1 berarti suka.
+
+#### Top-N Rekomendasi dari user: 607
+
+##### Film dengan rating tinggi dari penggunaan
+| Judul Film                   | Genre                                   |
+|------------------------------|-----------------------------------------|
+| The Silence of the Lambs      | Crime, Horror, Thriller                 |
+| Twister                       | Action, Adventure, Romance, Thriller    |
+| Saving Private Ryan           | Action, Drama, War                      |
+| Planet of the Apes            | Action, Drama, Sci-Fi                   |
+| The Matrix                    | Action, Sci-Fi, Thriller                |
+
+##### 10 Teratas Rekomendasi
+| Judul Film                    | Genre                                   |
+|-------------------------------|-----------------------------------------|
+| The Usual Suspects             | Crime, Mystery, Thriller                |
+| Forrest Gump                   | Comedy, Drama, Romance, War             |
+| Reservoir Dogs                 | Crime, Mystery, Thriller                |
+| Monty Python and the Holy Grail| Adventure, Comedy, Fantasy              |
+| One Flew Over the Cuckoo's Nest| Drama                                   |
+| The Princess Bride             | Action, Adventure, Comedy, Fantasy, Romance |
+| The Graduate                   | Comedy, Drama, Romance                  |
+| Cool Hand Luke                 | Drama                                   |
+| Fight Club                     | Action, Crime, Drama, Thriller          |
+| The Dark Knight                | Action, Crime, Drama, IMAX              |
+
+
+
 ## Evaluasi Model
-### RMSE (Root Mean Squared Error)
+### COLABORATIVE FILTERING
+#### RMSE (Root Mean Squared Error)
 Root Mean Squared Error (RMSE) adalah metrik yang digunakan untuk mengukur seberapa baik prediksi dari sebuah model cocok dengan data aktual. RMSE menghitung akar dari nilai rata-rata kuadrat kesalahan antara nilai prediksi dengan nilai aktual. Metrik ini sering digunakan untuk model regresi atau ketika kita ingin mengetahui seberapa besar rata-rata kesalahan dalam satuan aslinya (misalnya, harga dalam satuan dolar, jarak dalam kilometer).
 
 Secara sederhana, RMSE memberitahu seberapa jauh prediksi model dari nilai aktualnya. Semakin kecil nilai RMSE, semakin baik model dalam memprediksi nilai dengan akurat.
 
-### Rumus RMSE
+#### Rumus RMSE
 Rumus RMSE didefinisikan sebagai berikut:
 
 ```
 RMSE = sqrt((1/n) * Σ(y_i - ŷ_i)^2)
 ```
 
-### Penjelasan dari Rumus:
+#### Penjelasan dari Rumus:
 - **n**: Jumlah total data (observasi).
 - **y_i**: Nilai aktual dari data ke-i.
 - **ŷ_i**: Nilai prediksi dari model untuk data ke-i.
 - **(y_i - ŷ_i)^2**: Ini adalah **error** atau kesalahan kuadrat antara nilai aktual dan prediksi pada data ke-i.
 
-### Tahapan Perhitungan RMSE:
+#### Tahapan Perhitungan RMSE:
 1. Hitung **error** (selisih) antara nilai aktual dan prediksi untuk setiap data.
 2. Kuadratkan setiap error untuk menghilangkan nilai negatif.
 3. Hitung rata-rata dari semua nilai error kuadrat.
@@ -275,16 +395,18 @@ model.compile(
 ```
 EarlyStopping dan ModelCheckpoint digunakan untuk menghindari overfitting dan menyimpan model terbaik selama pelatihan.
 
-#### Visualisasi RMSE
-![download](https://github.com/user-attachments/assets/841f574d-9319-4a25-b3f0-fbb4169c0041)
+##### Visualisasi RMSE
+
+![download](https://github.com/user-attachments/assets/9a01a2e3-44fb-4645-9dbc-656641f0bd5e)
+
 ##### Analisis Grafik
-1. Di awal pelatihan (di epoch rendah), RMSE untuk data pelatihan dan pengujian mulai dari nilai yang lebih tinggi (sekitar 0.27–0.28). Ini menunjukkan bahwa pada awalnya, model belum mempelajari pola data dengan baik.
+1. Di awal pelatihan (di epoch rendah), RMSE untuk data pelatihan dan pengujian mulai dari nilai yang lebih tinggi (sekitar 0.28–0.29). Ini menunjukkan bahwa pada awalnya, model belum mempelajari pola data dengan baik.
 
 2. Kedua garis (train dan test) turun dengan cepat dalam beberapa epoch pertama (sekitar epoch 0–20). Ini adalah tahap di mana model belajar secara signifikan dari data, sehingga kesalahannya menurun dengan cepat.
 
 3. Setelah epoch ke-20, garis biru (train) terus menurun lebih tajam dibandingkan garis oranye (test). Ini menunjukkan bahwa model menjadi lebih baik pada data pelatihan.
 
-#### Menguji Model dan Memberikan Rekomendasi
+##### Menguji Model dan Memberikan Rekomendasi
 Setelah model dilatih, kode berikut digunakan untuk memberikan rekomendasi kepada user berdasarkan preferensi film mereka
 
 Mengambil user dan film yang belum ditonton
@@ -293,6 +415,24 @@ python
 movie_not_watched = movie_df[~movie_df['id'].isin(movie_watched_by_user.movieId.values)]
 ```
 Model memberikan rekomendasi berdasarkan prediksi rating tertinggi untuk film yang belum ditonton oleh user.
+
+### CONTENT-BASE FILTERING
+#### PRECISION
+Untk matriks yang digunakan di CBF adalah precisiion
+![dos_819311f78d87da1e0fd8660171fa58e620211012160253](https://github.com/user-attachments/assets/cec9e128-655e-4724-a57e-b93308ff579d)
+
+#### Penjelasan Rumus:
+* of our recommendations that are relevant: Jumlah rekomendasi yang relevan atau sesuai dengan preferensi pengguna.
+* of items we recommended: Total jumlah item yang direkomendasikan oleh sistem.
+
+dimana dari rumus diatas dapat diperoleh
+Precision  = 9/10
+            = 90%
+
+### HASIL EVALUASI
+Berdasarkan Hasil Evaluasi dari kejua jenis model diperoleh
+1. Untuk hasil RMSE dari Collaborative Filtering didapat 0,22
+2. untuk hasil Precision dari Content-Based Filtering didapat 90%
 
 ## Kesimpulan
 Content-Based Filtering memberikan rekomendasi berdasarkan genre film, menggunakan TF-IDF dan cosine similarity untuk menemukan film serupa.
